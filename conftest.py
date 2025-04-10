@@ -9,6 +9,7 @@ from openpyxl import Workbook
 @pytest.fixture(scope="session", autouse=True)
 def generate_files_and_archive():
     os.makedirs("files", exist_ok=True)
+    os.makedirs("resources", exist_ok=True)
 
     # CSV
     csv_data = [['a1', 'b1', 'c1'],
@@ -32,8 +33,8 @@ def generate_files_and_archive():
     pdf.multi_cell(0, 10, "This is a test PDF document.")
     pdf.output("files/Test_Pdf.pdf")
 
-    # Архивирование
-    archive_path = "files/archive.zip"
+    # Архивирование в папку resources/
+    archive_path = "resources/archive.zip"
     with zipfile.ZipFile(archive_path, 'w') as zf:
         for filename in ["Test_CSV.csv", "Test_Excel.xlsx", "Test_Pdf.pdf"]:
             zf.write(os.path.join("files", filename), arcname=filename)
