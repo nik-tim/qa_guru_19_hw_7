@@ -6,6 +6,7 @@ from fpdf import FPDF
 from openpyxl import Workbook
 
 
+# Фикстура для генерации файлов и архива
 @pytest.fixture(scope="session", autouse=True)
 def generate_files_and_archive():
     os.makedirs("files", exist_ok=True)

@@ -1,40 +1,35 @@
 import os
 import csv
 import zipfile
-import pytest
-from fpdf import FPDF
-from openpyxl import Workbook
+from io import TextIOWrapper
+from openpyxl import load_workbook
+from pypdf import PdfReader
+
+archive_path = os.path.join("resources", "archive.zip")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def generate_files_and_archive():
-    os.makedirs("files", exist_ok=True)
-    os.makedirs("resources", exist_ok=True)
+def test_csv_file():
+    with zipfile.ZipFile(archive_path) as zf:
+        with zf.open('Test_CSV.csv') as file:
+            reader = list(csv.reader(TextIOWrapper(file, 'utf-8-sig'), delimiter=';'))
+            assert reader == [['a1', 'b1', 'c1'],
+                              ['a2', 'b2', 'c2'],
+                              ['a3', 'b3', 'c3']]
 
-    # CSV
-    csv_data = [['a1', 'b1', 'c1'],
-                ['a2', 'b2', 'c2'],
-                ['a3', 'b3', 'c3']]
-    with open("files/Test_CSV.csv", "w", newline='', encoding='utf-8-sig') as f:
-        writer = csv.writer(f, delimiter=';')
-        writer.writerows(csv_data)
 
-    # XLSX
-    wb = Workbook()
-    ws = wb.active
-    for row in csv_data:
-        ws.append(row)
-    wb.save("files/Test_Excel.xlsx")
+def test_xlsx_file():
+    with zipfile.ZipFile(archive_path) as zf:
+        with zf.open('Test_Excel.xlsx') as file:
+            sheet = load_workbook(file).active
+            values = [cell.value for row in sheet.iter_rows() for cell in row]
+            assert values == ['a1', 'b1', 'c1',
+                              'a2', 'b2', 'c2',
+                              'a3', 'b3', 'c3']
 
-    # PDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, "This is a test PDF document.")
-    pdf.output("files/Test_Pdf.pdf")
 
-    # Архивирование в папку resources/
-    archive_path = "resources/archive.zip"
-    with zipfile.ZipFile(archive_path, 'w') as zf:
-        for filename in ["Test_CSV.csv", "Test_Excel.xlsx", "Test_Pdf.pdf"]:
-            zf.write(os.path.join("files", filename), arcname=filename)
+def test_pdf_file():
+    with zipfile.ZipFile(archive_path) as zf:
+        with zf.open('Test_Pdf.pdf') as file:
+            reader = PdfReader(file)
+            text = reader.pages[0].extract_text()
+            assert 'This is a test PDF document' in text
